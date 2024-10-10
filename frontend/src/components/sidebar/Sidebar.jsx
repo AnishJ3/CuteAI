@@ -10,18 +10,19 @@ function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat
   
   const handleClick = () => {
     if (!creatingChat) {
-      setCreatingChat(true);
-      setCurrentChatId(1000);
-  
-      // Ensure the new chat matches the expected structure
-      setChatWindows((prevWindows) => [
-        ...prevWindows,
-        { id: 1000, messages: [], text: "New Chat" }, // Change `chat_Id` to `id`
-      ]);
-  
-      console.log("New chat window is created");
+        setCreatingChat(true);
+        setCurrentChatId(1000);
+
+        // Ensure the new chat matches the expected structure
+        setChatWindows((prevWindows) => [
+            { id: 1000, messages: [], text: "New Chat" }, // Add the new chat at the front
+            ...prevWindows, // Then spread the previous chats
+        ]);
+
+        console.log("New chat window is created");
     }
-  };
+};
+
 
   const logout = async () => {
     

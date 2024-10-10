@@ -195,7 +195,7 @@ function Display() {
       </div>
 
       <div className="bg-gray-900 border-white p-4 h-screen w-1/3">
-        <History setCurrentChatId={setCurrentChatId} chatWindows={chatWindows} setChatWindows={setChatWindows} setCreatingChat={setCreatingChat} creatingChat={creatingChat} deleteChats={deleteChats} setDeleteChats={setDeleteChats} />
+        <History setCurrentChatId={setCurrentChatId} chatWindows={chatWindows} currentChatId = {currentChatId} setChatWindows={setChatWindows} setCreatingChat={setCreatingChat} creatingChat={creatingChat} deleteChats={deleteChats} setDeleteChats={setDeleteChats} />
       </div>
     </div>
   );
