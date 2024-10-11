@@ -7,12 +7,12 @@ axios.interceptors.response.use(
   async (error) => {
     if (error.response.status === 401 && !refresh) {
       refresh = true;
-
-      console.log(localStorage.getItem("refresh_token"));
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+      // console.log(localStorage.getItem("refresh_token"));
 
       try {
         const response = await axios.post(
-          "http://localhost:8000/token/refresh/",
+          `${BACKEND_URL}/token/refresh/`,
           { refresh: localStorage.getItem("refresh_token") },
           {
             headers: { "Content-Type": "application/json" },
