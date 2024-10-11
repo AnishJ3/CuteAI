@@ -72,6 +72,7 @@ const ToggleButton = styled.button`
 
 const Signup = () => {
 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; 
   const [isLogin, setIsLogin] = useState(true);
   const [username,setUserName] = useState("");
   const [password, setPassword] = useState("");
@@ -99,7 +100,7 @@ const Signup = () => {
     try 
     {
         // const csrfToken = getCsrfToken(); // Get CSRF token from cookies
-        const response = await axios.post('http://localhost:8000/token/', {
+        const response = await axios.post(`${BACKEND_URL}/token/`, {
             username: username,
             password: password,
         },
@@ -165,7 +166,7 @@ const Signup = () => {
             }
             
 
-            const response = await axios.post('http://localhost:8000/signup/', {
+            const response = await axios.post(`${BACKEND_URL}/signup/`, {
                 username: username,
                 password: password,
             },
