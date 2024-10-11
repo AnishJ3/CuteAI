@@ -7,7 +7,7 @@ import { Outlet, Link } from "react-router-dom";
 
 function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat}) {
 
-  
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const handleClick = () => {
     if (!creatingChat) {
         setCreatingChat(true);
@@ -28,7 +28,7 @@ function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat
     
         try {
             const { data } = await axios.post(
-                'http://localhost:8000/logout/',
+                `${BACKEND_URL}/logout/`,
                 {
                     refresh_token: localStorage.getItem('refresh_token'), // Send the refresh token
                 },
@@ -53,7 +53,7 @@ function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat
         
         try {
             const { data } = await axios.post(
-                'http://localhost:8000/logout/',
+                `${BACKEND_URL}/logout/`,
                 {
                     refresh_token: localStorage.getItem('refresh_token'), // Send the refresh token
                 },

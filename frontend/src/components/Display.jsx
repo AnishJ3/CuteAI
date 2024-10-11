@@ -3,8 +3,17 @@ import History from "./History";
 import Sidebar from "./sidebar/Sidebar";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+// import dotenv from 'dotenv';
+
+// Load environment variables
+// dotenv.config();
+// require('dotenv').config()/
+
+
 
 function Display() {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // Load BACKEND_URL from .env file
+
   const [messages, setMessages] = useState([]); // State to hold messages
   const [input, setInput] = useState(""); // State to hold current input
   const [queries, setQueries] = useState([]);
@@ -22,7 +31,7 @@ function Display() {
   useEffect(() => {
     const fetchChatHistory = async () => {
       try {
-        const response = await axios.post("http://localhost:8000/getChats/", {}, {
+        const response = await axios.post(`${BACKEND_URL}/getChats/`, {}, {
           headers: {
             // Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -49,7 +58,7 @@ function Display() {
 
   useEffect(() => {
     if (currentChatId !== null) {
-      axios.post('http://127.0.0.1:8000/getChatHistory/', { chat_id: currentChatId })
+      axios.post(`${BACKEND_URL}/getChatHistory/`, { chat_id: currentChatId })
         .then((res) => {
           if (res.status === 200) {
             setMessages(res.data);
@@ -88,18 +97,18 @@ function Display() {
 
     if (input.trim()) {
       if (currentChatId === 1000) {
-        axios.post('http://127.0.0.1:8000/newChat/')
+        axios.post(`${BACKEND_URL}/newChat/`)
           .then((res) => {
             if (res.status === 201) {
               const newChatId = res.data.chat_id;
               setChatParentId(1000, newChatId, input);
-              axios.put('http://127.0.0.1:8000/changeTitle/', { chat_id: newChatId, chat_title: input })
+              axios.put(`${BACKEND_URL}/changeTitle/`, { chat_id: newChatId, chat_title: input })
                 .then((res) => {
                   if (res.status === 200) {}
                 })
                 .catch((err) => console.log('Error updating chat title:', err));
 
-              axios.post('http://127.0.0.1:8000/newChatHistory/', { prompt: input, chat_id: newChatId })
+              axios.post(`${BACKEND_URL}/newChatHistory/`, { prompt: input, chat_id: newChatId })
                 .then((res) => {
                   if (res.status === 201) {
                     const updatedMessage = {
@@ -118,7 +127,7 @@ function Display() {
           })
           .catch((err) => console.log("Cannot create new chat", err));
       } else {
-        axios.post('http://127.0.0.1:8000/newChatHistory/', { prompt: input, chat_id: currentChatId })
+        axios.post(`${BACKEND_URL}/newChatHistory/`, { prompt: input, chat_id: currentChatId })
           .then((res) => {
             if (res.status === 201) {
               const updatedMessage = {

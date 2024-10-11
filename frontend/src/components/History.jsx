@@ -5,6 +5,7 @@ import axios from 'axios';
 
 function History({ setCurrentChatId, chatWindows, setChatWindows, creatingChat, currentChatId, setCreatingChat, deleteChats, setDeleteChats }) {
 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const clearChat = async () => {
     try {
       if (deleteChats.length === 0) {
@@ -13,7 +14,7 @@ function History({ setCurrentChatId, chatWindows, setChatWindows, creatingChat, 
       }
 
       // Use the full URL for your backend
-      const response = await axios.delete('http://localhost:8000/deleteChats/', {
+      const response = await axios.delete(`${BACKEND_URL}/deleteChats/`, {
         data: { chat_ids: deleteChats },
       });
 
