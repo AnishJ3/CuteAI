@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState,useRef } from 'react';
 import ChatHistory from '../components/History/ChatHistory';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
+import Alerts from './Alerts';
+import { Spinner,Alert,AlertIcon,AlertTitle,useToast, useDisclosure} from '@chakra-ui/react';
 
 function History({ setCurrentChatId, chatWindows, setChatWindows, creatingChat, currentChatId, setCreatingChat, deleteChats, setDeleteChats }) {
 
+  const { isOpen: isClearChatOpen, onOpen: onClearChatOpen, onClose: onClearChatClose } = useDisclosure();
+  const clearChatRef = useRef()
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const clearChat = async () => {
     try {
@@ -27,7 +31,7 @@ function History({ setCurrentChatId, chatWindows, setChatWindows, creatingChat, 
 
           // If the current chat was deleted, set currentChatId to the first chat in updatedWindows or null
           if (deleteChats.includes(currentChatId)) {
-            setCurrentChatId(updatedWindows.length > 0 ? updatedWindows[0].id : null);
+            setCurrentChatId(updatedWindows.length > 0 ? updatedWindows[0].id : -404);
           }
 
           return updatedWindows;
@@ -85,11 +89,16 @@ function History({ setCurrentChatId, chatWindows, setChatWindows, creatingChat, 
 
       {/* Button at the bottom */}
       <div className='mt-8 flex justify-center items-center'>
-        <button className="bg-gray-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center" onClick={() => clearChat()}>
+        <button className="bg-gray-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center" onClick={() => onClearChatOpen()}>
           <FaTrash className="mr-2" /> {/* Add icon with margin */}
           Clear Chat
         </button>
       </div>
+      <Alerts para={{ isOpen: isClearChatOpen, onClose: onClearChatClose }}
+        func={clearChat}
+        body="Are you sure you want to delete these chats?"
+        ref={clearChatRef}
+        header="Deleting chats"/>
     </div>
   );
 }

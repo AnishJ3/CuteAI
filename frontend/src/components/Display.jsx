@@ -1,8 +1,20 @@
 import Nav from "./Nav";
 import History from "./History";
 import Sidebar from "./sidebar/Sidebar";
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useRef } from 'react';
 import axios from 'axios';
+import { Spinner,Alert,AlertIcon,AlertTitle,useToast, useDisclosure} from '@chakra-ui/react';
+import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  AlertDialogCloseButton,
+  Button
+} from '@chakra-ui/react'
+
 // import dotenv from 'dotenv';
 
 // Load environment variables
@@ -18,14 +30,34 @@ function Display() {
   const [input, setInput] = useState(""); // State to hold current input
   const [queries, setQueries] = useState([]);
   const [chatWindows, setChatWindows] = useState([]);
-  const [currentChatId, setCurrentChatId] = useState(null);
+  const [currentChatId, setCurrentChatId] = useState(-404);
   const [creatingChat, setCreatingChat] = useState(false);
   const [deleteChats, setDeleteChats] = useState([])
+  const {isLogoutOpen, onLogoutOpen, onLogoutClose} = useDisclosure()
+  const logoutRef = useRef()
+  const toast = useToast()
 
   useEffect(() => {
     if (localStorage.getItem('access_token') === null) {
       window.location.href = '/login';
     }
+
+    if (localStorage.getItem('login_success') === 'true') {
+      // toast.success('Login successful!');
+      toast({
+        title: 'Login successful.',
+        description: "You've successfully logged in.",
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+
+      setTimeout(() =>{
+
+        localStorage.removeItem('login_success'); // Remove flag after showing toast
+      },[5000])
+    }
+
   }, [currentChatId]);
 
   useEffect(() => {
@@ -44,7 +76,7 @@ function Display() {
         }));
 
         chats.sort((a, b) => b.timestamp - a.timestamp);
-        setCurrentChatId(chats.length > 0 ? chats[0].id : null);
+        setCurrentChatId(chats.length > 0 ? chats[0].id : -404);
         setQueries(chats);
         setChatWindows(chats.map(chat => ({ id: chat.chat_id, messages: [], text: chat.text })));
 
@@ -56,6 +88,7 @@ function Display() {
     fetchChatHistory();
   }, []);
 
+  
   useEffect(() => {
     if (currentChatId !== null) {
       axios.post(`${BACKEND_URL}/getChatHistory/`, { chat_id: currentChatId })
@@ -160,7 +193,7 @@ function Display() {
 
         {/* Display messages in the blank space */}
         <div className="flex-1 bg-black rounded-md overflow-y-auto p-4">
-          {messages.length === 0 && chatWindows.length === 0 ? (
+          {messages.length === 0 && chatWindows.length === 0 && currentChatId=== -404 ? (
             <div className="text-white text-center">
               Please click on new chat to start a new chat.
             </div>
@@ -186,7 +219,10 @@ function Display() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="flex items-center p-4 bg-gray-900 border-t border-gray-900">
+        {
+          !(messages.length === 0 && chatWindows.length === 0) &&
+
+          (<form onSubmit={handleSubmit} className="flex items-center p-4 bg-gray-900 border-t border-gray-900">
           <input
             type="text"
             placeholder="Type your message..."
@@ -200,12 +236,15 @@ function Display() {
           >
             Send
           </button>
-        </form>
+        </form>)
+        }
       </div>
 
       <div className="bg-gray-900 border-white p-4 h-screen w-1/3">
         <History setCurrentChatId={setCurrentChatId} chatWindows={chatWindows} currentChatId = {currentChatId} setChatWindows={setChatWindows} setCreatingChat={setCreatingChat} creatingChat={creatingChat} deleteChats={deleteChats} setDeleteChats={setDeleteChats} />
       </div>
+
+      
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { Spinner,Alert,AlertIcon,AlertTitle,useToast} from '@chakra-ui/react';
 
 const Container = styled.div`
   display: flex;
@@ -68,13 +69,16 @@ const ToggleButton = styled.button`
 `;
 
 const Signup = () => {
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUserName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  
+  const [username, setUserName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [isClick, setIsClick] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isError,setIsError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const toast = useToast()
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -87,80 +91,112 @@ const Signup = () => {
   }, []);
 
   const Login = async () => {
-    console.log("submitted");
+    console.log('submitted');
     try {
       const response = await axios.post(`${BACKEND_URL}/token/`, {
         username: username,
         password: password,
-      }, 
-      // {
-      //   headers: { 'Content-Type': 'application/json' }
-      //   // withCredentials: true,
-      // }
-      );
+      });
 
       if (response.status === 200) {
         localStorage.setItem('access_token', response.data.access);
         localStorage.setItem('refresh_token', response.data.refresh);
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
         setIsAuthenticated(true);
+        setIsError(false)
+        // toast({
+        //   title: 'Login successful.',
+        //   description: "You've successfully logged in.",
+        //   status: 'success',
+        //   duration: 3000,
+        //   isClosable: true,
+        // });
+        localStorage.setItem('login_success', 'true');
         window.location.replace('/');
       }
     } catch (error) {
       console.error('Login failed:', error);
+      setIsError(true)
+      setErrorMessage("Your credentials are invalid. Please try again with another username or password.")
+
+    } finally {
+      setIsClick(false); // Stop spinner after login completes
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
 
+    setIsClick(true); // Start spinner
     if (isLogin) {
-      Login();
+      setTimeout(async () => {
+        await Login(); // Ensure `Login` completes before stopping the spinner
+      }, 1000); // Simulate a delay for spinner test
     } else {
-      // Handle sign-up logic
-      try {
-        if (confirm !== password) {
-          return; // Optionally handle password mismatch
-        }
+      setTimeout(async () => {
+        try {
+          if (confirm !== password) {
+            setIsClick(false); // Stop spinner in case of mismatch
+            return;
+          }
 
-        const response = await axios.post(`${BACKEND_URL}/signup/`, {
-          username: username,
-          password: password,
-        }, {
-          headers: { 'Content-Type': 'application/json' }
-          // withCredentials: true,
-        });
+          const response = await axios.post(`${BACKEND_URL}/signup/`, {
+            username,
+            password,
+          });
 
-        if (response.status === 201) {
-          Login();
+          if (response.status === 201) {
+            await Login(); // Attempt login after successful signup
+          }
+        } catch (error) {
+          console.error('Signup failed:', error);
+          setIsError(true)
+          setErrorMessage("A user already exists with these credentials")
+        } finally {
+          setIsClick(false); // Stop spinner after signup completes
         }
-      } catch (error) {
-        console.error('Signup failed:', error);
-      }
+      }, 0); // Simulate a delay for spinner test
     }
   };
 
   return (
     <Container>
+      <div className='flex  flex-col justify-center items-center'>
+        <div className='mb-3'>
+      {isError && (
+        <>
+          <Alert status='error'>
+              <AlertIcon />
+              <AlertTitle>{errorMessage}</AlertTitle>
+          </Alert>
+        </>
+      )}
+      </div>
+
+      
       <FormContainer
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 50 }}
         transition={{ duration: 0.5 }}
-      >
+      > 
         <FormTitle>{isLogin ? 'Login' : 'Sign Up'}</FormTitle>
         <Form onSubmit={handleSubmit}>
           <Input type="text" placeholder="Username" onChange={(e) => setUserName(e.target.value)} required />
           <Input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
           {!isLogin && <Input type="password" placeholder="Confirm Password" onChange={(e) => setConfirm(e.target.value)} required />}
-          <Button type="submit">{isLogin ? 'Login' : 'Sign Up'}</Button>
+          <Button type="submit">
+            {!isClick ? (isLogin ? 'Login' : 'Sign Up') : <Spinner color="red.500" />} {/* Display spinner during request */}
+          </Button>
         </Form>
         <ToggleButton onClick={toggleForm}>
           {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Login'}
         </ToggleButton>
       </FormContainer>
+      </div>
+
     </Container>
   );
 };
 
-export default Signup; // Ensure this is the default export
+export default Signup;

@@ -1,13 +1,19 @@
 import { ChatBubbleLeftIcon, DocumentDuplicateIcon, FolderIcon, Cog6ToothIcon, QuestionMarkCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid'; // Import correct icons
 import logo from './a.svg'
-import { useState } from 'react';
+import { useState,useRef } from 'react';
 import axios from 'axios';
 import { Outlet, Link } from "react-router-dom";
-
+import { Spinner,Alert,AlertIcon,AlertTitle,useToast, useDisclosure} from '@chakra-ui/react';
+import Alerts from '../Alerts';
 
 function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat}) {
 
+  
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  // const {isLogoutOpen, onLogoutOpen, onLogoutClose} = useDisclosure()
+  const { isOpen: isLogoutOpen, onOpen: onLogoutOpen, onClose: onLogoutClose } = useDisclosure();
+
+  const logoutRef = useRef()
   const handleClick = () => {
     if (!creatingChat) {
         setCreatingChat(true);
@@ -49,8 +55,6 @@ function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat
             // Handle errors appropriately, such as displaying an error message
         }
 
-
-        
         try {
             const { data } = await axios.post(
                 `${BACKEND_URL}/logout/`,
@@ -73,9 +77,6 @@ function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat
             console.error('Logout not working', e);
             // Handle errors appropriately, such as displaying an error message
         }
-
-    
-    
   };
   
    return (
@@ -149,11 +150,18 @@ function Sidebar({setCurrentChatId,setChatWindows, creatingChat, setCreatingChat
 
       {/* Logout Button */}
       <div className="mt-auto">
-        <button className="flex items-center p-4 w-full hover:bg-red-700 focus:outline-none rounded-md" onClick={logout}>
+        <button className="flex items-center p-4 w-full hover:bg-red-700 focus:outline-none rounded-md" onClick={onLogoutOpen}>
           <ArrowRightOnRectangleIcon className="h-6 w-6 mr-3" />
           <span>Logout</span>
         </button>
       </div>
+
+      <Alerts para={{ isOpen: isLogoutOpen, onClose: onLogoutClose }}
+        func={logout}
+        body="Are you sure you want to logout?"
+        ref={logoutRef}
+        header="Logging out"
+      />
     </div>
   );
 }
