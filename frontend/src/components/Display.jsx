@@ -3,7 +3,7 @@ import History from "./History";
 import Sidebar from "./sidebar/Sidebar";
 import { useState, useEffect,useRef } from 'react';
 import axios from 'axios';
-import { Spinner,Alert,AlertIcon,AlertTitle,useToast, useDisclosure} from '@chakra-ui/react';
+import { Spinner,Alert,AlertIcon,AlertTitle,useToast, useDisclosure, HStack,Stack} from '@chakra-ui/react';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -12,7 +12,9 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   AlertDialogCloseButton,
-  Button
+  Button,
+  Skeleton,
+  SkeletonCircle
 } from '@chakra-ui/react'
 
 // import dotenv from 'dotenv';
@@ -20,7 +22,6 @@ import {
 // Load environment variables
 // dotenv.config();
 // require('dotenv').config()/
-
 
 
 function Display() {
@@ -36,6 +37,8 @@ function Display() {
   const {isLogoutOpen, onLogoutOpen, onLogoutClose} = useDisclosure()
   const logoutRef = useRef()
   const toast = useToast()
+  const [loading, setLoading] = useState(false)
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (localStorage.getItem('access_token') === null) {
@@ -59,6 +62,11 @@ function Display() {
     }
 
   }, [currentChatId]);
+
+  useEffect(() => {
+    // Scroll to the bottom whenever a new message is added
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth",block: "end", inline: "nearest"  });
+  }, [messages]);
 
   useEffect(() => {
     const fetchChatHistory = async () => {
@@ -88,7 +96,7 @@ function Display() {
     fetchChatHistory();
   }, []);
 
-  
+
   useEffect(() => {
     if (currentChatId !== null) {
       axios.post(`${BACKEND_URL}/getChatHistory/`, { chat_id: currentChatId })
@@ -127,58 +135,86 @@ function Display() {
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent form submission
-
+    
+    
     if (input.trim()) {
+      // Create a temporary message with only the prompt
+
+      const tempMessage = { prompt: input, answer: "", chat_id: currentChatId };
+  
+      // Add the temporary message to the messages array
+      setMessages((prevmessages) => [...prevmessages, tempMessage]);
+      setInput(""); // Clear the input field
+      setLoading(true)
+  
       if (currentChatId === 1000) {
         axios.post(`${BACKEND_URL}/newChat/`)
           .then((res) => {
             if (res.status === 201) {
               const newChatId = res.data.chat_id;
-              setChatParentId(1000, newChatId, input);
+              // setChatParentId(1000, newChatId, input);
+  
+              // Update chat title
               axios.put(`${BACKEND_URL}/changeTitle/`, { chat_id: newChatId, chat_title: input })
-                .then((res) => {
-                  if (res.status === 200) {}
-                })
                 .catch((err) => console.log('Error updating chat title:', err));
-
+  
+              // Add response to chat history
               axios.post(`${BACKEND_URL}/newChatHistory/`, { prompt: input, chat_id: newChatId })
                 .then((res) => {
                   if (res.status === 201) {
                     const updatedMessage = {
-                      prompt: input,
+                      ...tempMessage,
                       answer: res.data.answer,
                       chat_id: newChatId,
                     };
-                    setMessages((prevmessages) => [...prevmessages, updatedMessage]);
-                    setCreatingChat(false);
+                    setMessages((prevmessages) => {
+                      const updatedMessages = [...prevmessages];
+                      updatedMessages[updatedMessages.length - 1] = updatedMessage;
+                      return updatedMessages;
+                    });
+                    setLoading(false)
+                    setCreatingChat(false)
+                    setChatParentId(1000, newChatId, input);
                   } else {
                     console.log('Chat cannot be added to history');
+                    setLoading(false)
                   }
                 })
                 .catch((err) => console.log('Error adding to chat history:', err));
+
+
             }
           })
           .catch((err) => console.log("Cannot create new chat", err));
-      } else {
+      } 
+      else {
+
         axios.post(`${BACKEND_URL}/newChatHistory/`, { prompt: input, chat_id: currentChatId })
           .then((res) => {
             if (res.status === 201) {
               const updatedMessage = {
-                prompt: input,
+                ...tempMessage,
                 answer: res.data.answer,
-                chat_id: currentChatId,
               };
-              setMessages((prevmessages) => [...prevmessages, updatedMessage]);
+              setMessages((prevmessages) => {
+                const updatedMessages = [...prevmessages];
+                updatedMessages[updatedMessages.length - 1] = updatedMessage;
+                return updatedMessages;
+              });
               setCreatingChat(false);
+              setLoading(false)
             } else {
               console.log('Chat cannot be added to history');
+              setLoading(false)
             }
-          });
+          })
+          .catch((err) => console.log('Error adding to chat history:', err));
       }
-
-      setInput(""); // Clear the input field
     }
+    setInput(""); // Clear the input field
+
   };
+  
 
   return (
     <div className="flex items-center justify-center h-screen overflow-hidden">
@@ -192,8 +228,15 @@ function Display() {
         </div>
 
         {/* Display messages in the blank space */}
+        
         <div className="flex-1 bg-black rounded-md overflow-y-auto p-4">
-          {messages.length === 0 && chatWindows.length === 0 && currentChatId=== -404 ? (
+        {messages.length === 0 && chatWindows.length !== 0 && (
+          <div className="text-gray-400 text-center">
+            Please type some messages to interact with the model.
+          </div>
+        )}
+
+        {messages.length === 0 && chatWindows.length === 0 && currentChatId=== -404 ? (
             <div className="text-white text-center">
               Please click on new chat to start a new chat.
             </div>
@@ -210,14 +253,27 @@ function Display() {
                   <div
                     className="bg-gray-700 text-white self-end p-2 rounded-md"
                     style={{ maxWidth: "100%", wordWrap: "break-word" }}
+                    ref={messagesEndRef}
                   >
                     {msg.answer}
                   </div>
                 )}
+                
+
               </div>
             ))
           )}
-        </div>
+       
+
+          {loading && <HStack gap="5" ref={messagesEndRef}>
+                
+                <Stack flex="1">
+                  <Skeleton height="20" />
+                  {/* <Skeleton height="20" width="80%" /> */}
+                </Stack>
+              </HStack>}
+          
+        </div >
 
         {
           !(messages.length === 0 && chatWindows.length === 0) &&

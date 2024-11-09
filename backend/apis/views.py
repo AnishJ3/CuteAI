@@ -4,7 +4,8 @@ from rest_framework.views import APIView
 from rest_framework import status
 from .models import Data, ChatHistory, Chats
 from .serializers import DataSerializer, ChatHistorySerializer, ChatsSerializer
-from src.chat_ai21 import get_response_llm
+# from src.chat_ai21 import get_response_llm
+from src.chat_cohere import get_response_llm
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout,tokens
 from rest_framework.permissions import IsAuthenticated
